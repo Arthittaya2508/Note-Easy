@@ -3,38 +3,41 @@ import React, { useState, useRef, useEffect } from "react";
 import Nav from "./components/navbar/page";
 import { CiGrid41, CiBoxList, CiTimer, CiStar } from "react-icons/ci";
 import { RiArrowDropDownLine } from "react-icons/ri";
+import NoteCard from "./components/NoteCard/page";
 
 const Page: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isGridView, setIsGridView] = useState(true); // State for toggling list/grid view
-  const menuRef = useRef<HTMLDivElement>(null); // Ref for the popover
+  const [isGridView, setIsGridView] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [noteName, setNoteName] = useState("");
+  const [notes, setNotes] = useState<
+    { name: string; creator: string; date: string }[]
+  >([]);
   const [filter, setFilter] = useState<
     "recent" | "favorite" | "name-asc" | "name-desc" | "date-asc" | "date-desc"
   >("recent");
-  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false); // For dropdown
-
-  const toggleMenu = () => {
-    setIsMenuOpen((prev) => !prev);
-  };
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
 
   const handleAddNote = () => {
-    console.log("Creating a note...");
-    setIsMenuOpen(false);
+    setIsModalOpen(true);
   };
 
-  const handleCreateFolder = () => {
-    console.log("Creating a folder...");
-    setIsMenuOpen(false);
-  };
-
-  const handleAddImage = () => {
-    console.log("Adding an image...");
-    setIsMenuOpen(false);
+  const handleCreateNote = () => {
+    if (noteName.trim()) {
+      const newNote = {
+        name: noteName,
+        creator: "Your Name",
+        date: new Date().toLocaleDateString(),
+      };
+      setNotes((prevNotes) => [...prevNotes, newNote]);
+      setIsModalOpen(false);
+      setNoteName("");
+    }
   };
 
   const handleFilterChange = (newFilter: typeof filter) => {
     setFilter(newFilter);
-    setIsFilterDropdownOpen(false); // Close dropdown after selecting filter
+    setIsFilterDropdownOpen(false);
     console.log(`Filter changed to: ${newFilter}`);
   };
 
@@ -42,60 +45,23 @@ const Page: React.FC = () => {
     setIsGridView(isGrid);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [menuRef]);
-
   return (
     <div>
       <Nav />
       <div className="flex flex-col items-center mt-8">
-        {/* Unified container with border and shadow */}
         <div className="flex flex-col items-center">
           <button
-            onClick={toggleMenu}
+            onClick={handleAddNote}
             className="mb-4 bg-blue-600 text-white px-4 py-2 rounded-lg"
           >
             เพิ่ม
           </button>
-          {isMenuOpen && (
-            <div
-              ref={menuRef}
-              className="flex flex-col items-center bg-gray-400 shadow-md rounded-lg p-4 mb-4"
-            >
-              <button
-                onClick={handleAddNote}
-                className="mb-2 text-blue-600 hover:underline"
-              >
-                สร้างโน๊ต
-              </button>
-              <button
-                onClick={handleCreateFolder}
-                className="mb-2 text-blue-600 hover:underline"
-              >
-                สร้างโฟลเดอร์
-              </button>
-              <button
-                onClick={handleAddImage}
-                className="text-blue-600 hover:underline"
-              >
-                เพิ่มรูป
-              </button>
-            </div>
-          )}
         </div>
+
         <div className="border rounded-lg shadow-md p-6 w-full max-w-6xl">
-          {/* Filter and View Options in a single row */}
+          {/* Filter and View Options */}
           <div className="flex justify-between w-full mt-4">
+            {/* Filter Buttons */}
             <div className="flex space-x-4">
               <button
                 onClick={() => handleFilterChange("recent")}
@@ -121,17 +87,17 @@ const Page: React.FC = () => {
               </button>
             </div>
 
-            {/* Dropdown and View buttons on the right */}
+            {/* View and Filter Options */}
             <div className="flex space-x-4">
               <div className="relative">
                 <button
                   onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
                   className="px-4 py-2 rounded bg-gray-200 text-black flex"
                 >
-                  ตัวกรองอื่นๆ <RiArrowDropDownLine className="w-7 h-7  " />
+                  ตัวกรองอื่นๆ <RiArrowDropDownLine className="w-7 h-7" />
                 </button>
                 {isFilterDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <div className="absolute right-0 mt-2 w-40 bg-white text-gray-700 border border-gray-200 rounded-md shadow-lg">
                     <button
                       onClick={() => handleFilterChange("name-asc")}
                       className="block w-full px-4 py-2 text-left hover:bg-gray-100"
@@ -169,7 +135,7 @@ const Page: React.FC = () => {
                     : "bg-gray-200 text-black"
                 }`}
               >
-                <CiBoxList className="w-5 h-5 mt-0.5 font-bold " />
+                <CiBoxList className="w-5 h-5 mt-0.5 font-bold" />
               </button>
               <button
                 onClick={() => handleViewChange(true)}
@@ -179,25 +145,60 @@ const Page: React.FC = () => {
                     : "bg-gray-200 text-black"
                 }`}
               >
-                <CiGrid41 className="w-5 h-5 mt-0.5 font-bold " />
+                <CiGrid41 className="w-5 h-5 mt-0.5 font-bold" />
               </button>
             </div>
           </div>
 
-          {/* Notes Display (List or Grid) */}
+          {/* Notes Display */}
           <div
             className={`mt-8 ${
               isGridView ? "grid grid-cols-4 gap-5" : "flex flex-col space-y-4"
             }`}
           >
-            {/* Replace the below divs with dynamic note content */}
-            <div className="bg-gray-200 p-4 rounded-lg">Note 1</div>
-            <div className="bg-gray-200 p-4 rounded-lg">Note 2</div>
-            <div className="bg-gray-200 p-4 rounded-lg">Note 3</div>
-            <div className="bg-gray-200 p-4 rounded-lg">Note 3</div>
+            {notes.map((note, index) => (
+              <NoteCard
+                key={index}
+                note={note.name}
+                creator={note.creator}
+                date={note.date}
+              />
+            ))}
           </div>
         </div>
       </div>
+
+      {/* Modal for Adding Note */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4 text-gray-700">
+              เพิ่มโน้ตใหม่
+            </h2>
+            <input
+              type="text"
+              value={noteName}
+              onChange={(e) => setNoteName(e.target.value)}
+              placeholder="ชื่อโน้ต"
+              className="w-full p-2 border rounded mb-4 text-gray-700"
+            />
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={handleCreateNote}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                สร้าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
