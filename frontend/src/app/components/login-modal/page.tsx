@@ -1,16 +1,46 @@
 "use client";
 import React, { useState } from "react";
-import { FiEye, FiEyeOff } from "react-icons/fi"; // icons for eye
+import { useRouter } from "next/navigation"; // Import useRouter
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 interface LoginModalProps {
-  onClose: () => void; // Explicitly define the type for onClose
+  onClose: () => void;
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter(); // Initialize useRouter
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("Login successful");
+        onClose();
+        router.push("/homepage/home-page"); // Redirect to homepage/add on success
+      } else {
+        setErrorMessage(data.message);
+      }
+    } catch (error) {
+      setErrorMessage("An error occurred. Please try again later.");
+    }
   };
 
   return (
@@ -27,15 +57,21 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
         <h2 className="text-2xl font-semibold mb-4 text-center text-gray-700">
           เข้าสู่ระบบ
         </h2>
-        <form>
+        {errorMessage && (
+          <div className="mb-4 text-red-500 text-center">{errorMessage}</div>
+        )}
+        <form onSubmit={handleLogin}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">
               Username
             </label>
             <input
               type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full p-2 border text-gray-600 border-gray-300 rounded-lg"
               placeholder="Enter username"
+              required
             />
           </div>
           <div className="mb-4 relative">
@@ -44,8 +80,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
             </label>
             <input
               type={showPassword ? "text" : "password"}
-              className="w-full p-2 border  text-gray-600 border-gray-300 rounded-lg"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border text-gray-600 border-gray-300 rounded-lg"
               placeholder="Enter password"
+              required
             />
             <div
               className="absolute inset-y-0 right-0 top-4 pr-3 flex items-center cursor-pointer"
@@ -68,7 +107,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
           </div>
         </form>
         <div className="text-center mt-4">
-          <span className="text-sm text-gray-600 ">ยังไม่มีบัญชี? </span>
+          <span className="text-sm text-gray-600">ยังไม่มีบัญชี? </span>
           <span className="text-sm text-blue-600 cursor-pointer">
             สมัครสมาชิก
           </span>
